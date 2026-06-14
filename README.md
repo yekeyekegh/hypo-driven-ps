@@ -5,6 +5,7 @@
 > *Hypothesis-driven, structured diagnosis & problem solving for hard, stuck, ambiguous problems.*
 
 <p>
+  <img alt="version 1.0" src="https://img.shields.io/badge/version-1.0-blue">
   <img alt="type: agent skill" src="https://img.shields.io/badge/type-agent%20skill-6f42c1">
   <img alt="scope: general problem solving" src="https://img.shields.io/badge/scope-general%20problem%20solving-0969da">
   <img alt="trigger: explicit only" src="https://img.shields.io/badge/trigger-explicit%20only-d29922">
@@ -177,4 +178,4 @@ hypo-driven-ps/
 
 ## License
 
-详见仓库 LICENSE（如未提供，默认保留所有权利，使用前请联系作者）。
+[MIT](LICENSE) © 2026 [yekeyekegh](https://github.com/yekeyekegh)
