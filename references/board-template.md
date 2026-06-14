@@ -1,7 +1,13 @@
 # 假设板:<topic>
 
 > 维护者:主 agent(编排者)。每轮重写为最新快照。
-> 配套日志:`<topic>-log.md`(append-only)。
+> 配套日志:`<topic>-log.md`(append-only);细粒度证据:`<topic>-verdicts/R<NN>-H<NN>.md`。
+
+## 0. 元信息（续跑读这里）
+
+- **工作语言**:<首次启动时主 agent 当时语言,如 中文;全程沿用,spawn 时注入 subagent>
+- **最新轮号**:R<NN>（续跑时下一轮 = 本号 +1，不 reset）
+- **worktree**:<隔离工作树路径/分支>
 
 ## 1. 问题框定
 
