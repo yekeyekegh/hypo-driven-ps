@@ -35,7 +35,7 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 9. **成本过大的修复不得擅自执行** —— 确诊后须先评估修复成本;命中「成本过大」任一信号(见「修复成本闸门」)时,Diagnostician 不修、带评估上报,**由用户决策**——**即便处于自主模式也要上报**(高影响、难回滚)。
 10. **每节点通过须提交,修复失败须回退**(目标有 git 时)—— 节点1/节点2 各 Reviewer 通过后各一次 commit;修复 3 次失败 → 工作树回退到修复前 + 失败 diff 存档。
 11. **智识诚实,不懂别装** —— 判据测不了→「无法判断」;证据不足→不下结论;不清楚就如实说"我不理解 X"、去研究或回报主 agent,绝不臆造信心。
-12. **必须在隔离 worktree 中运行**(有 git 时)—— 第0步先经 `using-git-worktrees`;无 git 默认拒启,仅用户显式坚持才降级裸跑。根除跨 session/任务的工作树串台。
+12. **必须在隔离 worktree 中运行**(有 git 时)—— 第0步先经 `using-git-worktrees`,**优先原生 `EnterWorktree`(落项目内 `.claude/worktrees/`)**,禁裸 `git worktree add` 到项目外部;无 git 默认拒启,仅用户显式坚持才降级裸跑。根除跨 session/任务的工作树串台。
 
 ## 产物:两份文件(入 docs/,提交进 Git)
 
@@ -55,7 +55,10 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 
 **第 0 步(主 agent 做,首次或续跑):**
 
-1. **worktree 门禁(最先,先于一切取证)**:用 `using-git-worktrees` 确保隔离工作树——该 topic 的 worktree **已存在 → 进入续跑;否则新建**。所有产物(board/log/verdicts/probes)落在 worktree 内,根除跨 session/任务的工作树串台。
+1. **worktree 门禁(最先,先于一切取证)**:走 `using-git-worktrees` 确保隔离工作树,**所有产物(board/log/verdicts/probes)落在 worktree 内**,根除跨 session/任务的工作树串台。
+   - **优先用原生 `EnterWorktree` 工具**——它落在**项目内** `.claude/worktrees/<name>` 并把会话切进去;`<name>` 取自 topic(如 `hypo-driven-ps-<topic>`),便于续跑定位。**禁止**裸 `git worktree add`(尤其禁止建到项目**外部**同级目录)——这是 `using-git-worktrees` 点名的 **#1 大忌**;仅当确无原生工具时才用 git 兜底,且只落**项目内** `.worktrees/`(须 gitignore)。
+   - **baseRef 用当前 HEAD**(从你要诊断的本地代码切;不要默认从 `origin/<default>` 的 `fresh`,否则工作树里没有待诊断的改动)。
+   - **续跑**:该 topic 的 worktree **已存在 → 用 `EnterWorktree(path=…)` 重进**(不新建);否则新建。进去后再按第 2 步判 续跑/全新。
    - **无 git → 默认拒绝启动** + 引导用户(`git init` / 换到 git 项目);**仅当用户显式坚持**才降级"裸跑",并明确告知失去 隔离 / 提交 / 回退 / 续跑 四项保障。
 2. **续跑 or 全新**:
    - worktree 里**已有** `<topic>-board.md` → **续跑**:主 agent 读**最新 board**(整盘假设+状态+排序)+ **log**(跨轮 why)重建框架;`工作语言` 读 board 头;**round 续号 = board 头「最新轮号」+1(不 reset)**;**可选派基线 Diagnostician 重核"代码现实"**(代码是否漂移、上轮修复是否还在)。
@@ -214,6 +217,7 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 - 证据不足却下了结论,或装懂(本该「无法判断」或"我不理解 X"却含糊带过)。
 - 简报里用裸 `(高/中)` 让用户猜哪个是可能性、哪个是难度(必须全标注)。
 - 没经 worktree 门禁就在共享工作树(如 main)上跑(无 git 又没走显式降级确认)。
+- 有原生 `EnterWorktree` 却用裸 `git worktree add`,或把 worktree 建到项目**外部**目录(应落项目内 `.claude/worktrees/`)。
 - 续跑时把 round 号 reset 回 R01,或没读最新 board+log 就另起炉灶。
 - 把完整 verdict 堆进主 agent 上下文 / 塞进 log(应:subagent 写 verdict 文件 + 只回 digest;log 只留摘要+指针)。
 

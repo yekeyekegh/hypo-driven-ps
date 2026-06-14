@@ -273,3 +273,9 @@ hypo-driven-ps/
   D 给 R 的"诊断/修复交付单"本就是它写进 verdicts 文件的 diagnostic/repair 节,R 的批准/整改即 *-review 节。
   故**统一为单一 `verdict-template.md`**(交付单字段成为 diagnostic/repair 节的字段),**删除 handoff-template.md**,
   并改 SKILL/brief 里对「交付单」的引用为「verdict 节(按 verdict-template)」。避免两份重叠模板。
+
+> 修正(2026-06-14,dry-run 暴露):**worktree 必须用原生 `EnterWorktree`、落项目内 `.claude/worktrees/`**。
+> dry-run 里我误用裸 `git worktree add` 建到项目外部同级目录——这恰是 `using-git-worktrees` 点名的 #1 大忌。
+> 已写死进 SKILL.md 第0步:优先 EnterWorktree(项目内 `.claude/worktrees/<name>`,name 取自 topic);禁裸 git worktree add /
+> 禁建到项目外部;无原生工具才 git 兜底且只落项目内 `.worktrees/`;baseRef 用当前 HEAD(非 fresh);续跑用 `EnterWorktree(path=…)` 重进。
+> 同步 Iron Law 12 + Red Flags。
