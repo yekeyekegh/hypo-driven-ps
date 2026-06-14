@@ -160,12 +160,18 @@ hypo-driven-ps/
 
 ## 复用的 skill
 
-由 subagent 在各自上下文里 invoke，互不污染主 agent：
+本 skill 复用的所有外部 skill 均来自 **[superpowers](https://github.com/obra/superpowers)**（by [@obra](https://github.com/obra)）。它们在各自的上下文里被 invoke，互不污染主 agent：
 
-- **Diagnostician** → `test-driven-development` —— 为判据 / 修复写失败测试再实现。
-- **Reviewer** → `verification-before-completion` —— 核验证据、确认问题真解决。
+| 复用的 skill | 由谁 invoke | 用途 |
+|---|---|---|
+| `using-git-worktrees` | 主 agent（第 0 步门禁） | 进隔离工作树后再开工，根除跨 session 串台 |
+| `test-driven-development` | Diagnostician | 为判据 / 修复先写失败测试再实现 |
+| `verification-before-completion` | Reviewer | 核验证据、确认问题真解决 |
+| `finishing-a-development-branch` | 主 agent（收尾） | 把 merge / 留 PR / 仅清理的选择交用户 |
 
 > 这些 skill 是行为指引型 prompt，自身不 spawn subagent，在哪个上下文被读到就约束哪个 agent。
+>
+> 此外，`references/` 下的 `root-cause-tracing.md`、`condition-based-waiting.md`、`defense-in-depth.md` 等取证技法，改编自 superpowers 的 `systematic-debugging`（本 skill 有意**不直接 invoke** 它，以免四阶段流程与本流程冲突）。
 
 ---
 
