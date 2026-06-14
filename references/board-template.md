@@ -1,7 +1,7 @@
 # 假设板:<topic>
 
 > 维护者:主 agent(编排者)。每轮重写为最新快照。
-> 配套日志:`<topic>-log.md`(append-only);细粒度证据:`<topic>-verdicts/R<NN>-H<NN>.md`。
+> 课题文件夹:`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/`;配套日志:`<topic>-log.md`(append-only);细粒度证据:`<topic>-verdicts/R<NN>-H<NN>.md`;视觉证据:`<topic>-proofs/R<NN>-H<NN>/`。
 
 ## 0. 元信息（续跑读这里）
 
