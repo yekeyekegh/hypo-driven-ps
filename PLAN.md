@@ -9,7 +9,7 @@
 **Tech Stack:** Markdown(SKILL.md + references)、Claude Code Skill 约定(frontmatter: name/description)、Agent 工具(spawn opus subagent)、复用 superpowers 的 test-driven-development / verification-before-completion。
 
 **前置说明:**
-- ⚠️ **执行期迭代**:Tasks 1–5 的交付内容在 inline 执行中经多轮用户反馈迭代(状态三态化、用户检查点、修复成本闸门、subagent 每轮回收、两评审节点 + 交付单、3 次修复上限、测试二分持久化、新增 handoff-template.md)。**已写文件为权威内容**(`SKILL.md` 与 `references/*.md`),完整决策见 `DESIGN.md` 的「§9 决议」累积记录。本 PLAN 下方 Task 1/4/5 的嵌入正文为早期版本,可能滞后——以实际文件为准。
+- ⚠️ **执行期迭代**:Tasks 1–5 的交付内容在 inline 执行中经多轮用户反馈迭代(状态三态化、用户检查点、修复成本闸门、subagent 每轮回收、两评审节点 + 交付单、3 次修复上限、测试二分持久化、新增 handoff-template.md)。**已写文件为权威内容**(`SKILL.md` 与 `references/*.md`),完整决策见 `DESIGN.md` 的「§9 决议」累积记录。本 PLAN 下方 Task 1/4/5 的嵌入正文为早期版本,可能滞后——以实际文件为准。**v2 起 `handoff-template.md` 已并入 `verdict-template.md` 并删除**(详见 PLAN-v2.md);本 v1 文档里对 handoff-template 的引用均为历史记录。
 - 落地根目录:`C:\Users\wenjie\.agents\skills\hypo-driven-ps\`(下称 `<ROOT>`)。
 - 复制源目录:`C:\Users\wenjie\.agents\skills\.cache\superpowers\skills\systematic-debugging\`(下称 `<SRC>`)。
 - 提交步骤:仅当 `<ROOT>` 所在目录处于 Git 版本控制下才执行;当前 `C:\Users\wenjie` 不是 git 仓库,若 `.agents` 也不是,则**跳过所有 `git commit` 步骤**,改为在任务末尾用 `ls`/`grep` 核对文件落盘即可。
@@ -26,7 +26,7 @@
     log-template.md                 # Task 3 — 迭代日志模板(append-only)
     diagnostician-brief.md          # Task 4 — Diagnostician subagent 角色简报
     reviewer-brief.md               # Task 5 — Reviewer subagent 角色简报
-    handoff-template.md             # Task 5 — 两张交付单(诊断/修复)模板
+    verdict-template.md             # (v2)R<NN>-H<NN>.md 模板;原 handoff-template 已并入并删除
     root-cause-tracing.md           # Task 6 — 复制自 <SRC>
     find-polluter.sh                # Task 6 — root-cause-tracing 的配套脚本
     condition-based-waiting.md      # Task 6 — 复制自 <SRC>
@@ -524,7 +524,7 @@ references/condition-based-waiting.md
 references/defense-in-depth.md
 references/diagnostician-brief.md
 references/find-polluter.sh
-references/handoff-template.md
+references/verdict-template.md
 references/log-template.md
 references/reviewer-brief.md
 references/root-cause-tracing.md
@@ -535,7 +535,7 @@ references/root-cause-tracing.md
 Run:
 ```bash
 ROOT="$HOME/.agents/skills/hypo-driven-ps"
-for f in board-template.md log-template.md diagnostician-brief.md reviewer-brief.md handoff-template.md root-cause-tracing.md condition-based-waiting.md defense-in-depth.md; do
+for f in board-template.md log-template.md verdict-template.md diagnostician-brief.md reviewer-brief.md root-cause-tracing.md condition-based-waiting.md defense-in-depth.md; do
   grep -q "$f" "$ROOT/SKILL.md" && ([ -f "$ROOT/references/$f" ] && echo "OK ref: $f" || echo "DANGLING ref: $f")
 done
 ```
