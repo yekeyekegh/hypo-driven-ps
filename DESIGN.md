@@ -25,12 +25,13 @@
   Diagnostician 在领一轮**,不并发多个。
 - **不做复杂打分公式**:概率/成本一律定性 高/中/低 即可。
 
-## 3. 核心产物:两份文件
+## 3. 核心产物:每课题一个文件夹
 
-放在 `docs/hypo-driven-ps/<topic>-*.md`,**提交进 Git**,作为可追溯的正式诊断档案
+每个课题的全部产物收进**单一文件夹** `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/`(`<yyyy-mm-dd>` = 课题创建日,定死不改;同目录下可并存多个课题,不再散落),**提交进 Git**,作为可追溯的正式诊断档案
 (此处有意覆盖全局 `_tmp_` 临时文件规范——因为它是诊断记录而非临时脚本)。
+文件夹内五类产物:`<topic>-board.md`、`<topic>-log.md`、`<topic>-verdicts/`(见 v2.2)、`<topic>-probes/`、`<topic>-proofs/`(截图等视觉证据,须落 `R<NN>-H<NN>/` 子文件夹,详见 SKILL.md)。
 
-### 3.1 假设板 `docs/hypo-driven-ps/<topic>-board.md` — 当前状态快照(每轮重写,主 agent 维护)
+### 3.1 假设板 `<topic>-board.md` — 当前状态快照(每轮重写,主 agent 维护)
 包含三块:
 1. **问题框定**:观察到的症状 + "解决"的成功判据(怎样算解决)。
 2. **假设集合表**(每个假设一行):
@@ -49,7 +50,7 @@
    无法判断=判据当前不可测量;无需验证=被已确诊项盖过或经重排已无关。
 3. **当前轮计划**:本轮交给 Diagnostician 验哪个 Hypo · 为何选它(性价比理由)· 验证要点(对照哪条判据、建议手段)。
 
-### 3.2 迭代日志 `docs/hypo-driven-ps/<topic>-log.md` — append-only,只追加不改写
+### 3.2 迭代日志 `<topic>-log.md` — append-only,只追加不改写
 两类来源都往这里追加(谁写、写什么见 §4):
 - **Diagnostician 的轮次记录**:轮次 N、攻击的 Hypo(ID+描述)、做了什么(action)、测了什么
   (对照的判据+手段)、结果(成功/失败/无法判断,具体哪条判据测不了)、提交的证据摘要、Reviewer 结论。

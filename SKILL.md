@@ -19,7 +19,7 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 - **Diagnostician(opus subagent)**:领当前轮,调 `test-driven-development` 写测试、验证判据、交付结论+证据;经 Reviewer 通过后写 log。职责见 `references/diagnostician-brief.md`。
 - **Reviewer(opus subagent)**:核验 Diagnostician 的证据,调 `verification-before-completion`,批准或退回整改。职责见 `references/reviewer-brief.md`。
 
-任一时刻**只有一个 Diagnostician、一个 Reviewer,串行进行**。不并发多个假设。
+任一时刻**只有一个 Diagnostician、一个 Reviewer**——「串行」指**不并发多个假设**(每轮靠上一轮 learning 重排整盘),**不等于阻塞主 agent**:spawn 用 `run_in_background: true`,子 agent 工作期间主 agent 仍可与用户对话(见「运行期异步交互」)。
 
 **subagent 生命周期(每轮回收)**:每一轮起**全新**的一对 Diagnostician/Reviewer——它们靠 board + log 两份文件重建所需状态,不靠跨轮记忆,以保证反锚定、上下文有界。**轮内**的「Diagnostician → Reviewer → 整改 → Diagnostician」交接用 `SendMessage` **续同一个实例**(让它记得自己刚做了什么、Reviewer 提了什么),**不要**中途起新的。本轮 log 写完、board 更新后,这一对**一起回收**;下一轮再起全新一对。
 
@@ -38,12 +38,17 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 11. **智识诚实,不懂别装** —— 判据测不了→「无法判断」;证据不足→不下结论;不清楚就如实说"我不理解 X"、去研究或回报主 agent,绝不臆造信心。
 12. **必须在隔离 worktree 中运行**(有 git 时)—— 第0步先经 `using-git-worktrees`,**优先原生 `EnterWorktree`(落项目内 `.claude/worktrees/`)**,禁裸 `git worktree add` 到项目外部;无 git 默认拒启,仅用户显式坚持才降级裸跑。根除跨 session/任务的工作树串台。
 
-## 产物:两份文件(入 docs/,提交进 Git)
+## 产物:课题文件夹(入 docs/,提交进 Git)
 
-- **假设板** `docs/hypo-driven-ps/<topic>-board.md` —— 当前状态快照,主 agent 每轮重写。结构见 `references/board-template.md`。
-- **迭代日志** `docs/hypo-driven-ps/<topic>-log.md` —— append-only,只追加不改写。结构见 `references/log-template.md`。
+每个课题的全部产物收进**单一文件夹** `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/`(`<yyyy-mm-dd>` = 课题**创建日**,定死不改;`hypo-driven-ps/` 下可并存多个课题文件夹,不再散落):
 
-> 注:此处有意覆盖"临时文件 `_tmp_` 前缀、不入库"的全局规范——这是可追溯的诊断档案,不是临时脚本。
+- **假设板** `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-board.md` —— 当前状态快照,主 agent 每轮重写。结构见 `references/board-template.md`。
+- **迭代日志** `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-log.md` —— append-only,只追加不改写。结构见 `references/log-template.md`。
+- **verdict 目录** `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-verdicts/` —— 每轮 `R<NN>-H<NN>.md` 文字结论。
+- **探针目录** `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/` —— 诊断探针测试代码 + `failed-fixes/*.patch`。
+- **证据目录** `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-proofs/` —— 截图/图片/抓取等**非测试视觉证据**。**铁律**:其下**不得直接放文件**,所有证据必须落 `R<NN>-H<NN>/` 子文件夹(连字符,与 verdicts 一致),该层下**建议**再按用途分子文件夹(如 `R02-H03/登录失败截图/step1.png`)。
+
+> 注:此处有意覆盖"临时文件 `_tmp_` 前缀、不入库"的全局规范——这是可追溯的诊断档案,不是临时脚本。board/log/verdicts/probes/proofs 全部随课题文件夹提交进 Git。
 
 ## 优先级规则:信息增益 ÷ 成本
 
@@ -56,21 +61,22 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 
 **第 0 步(主 agent 做,首次或续跑):**
 
-1. **worktree 门禁(最先,先于一切取证)**:走 `using-git-worktrees` 确保隔离工作树,**所有产物(board/log/verdicts/probes)落在 worktree 内**,根除跨 session/任务的工作树串台。
+1. **worktree 门禁(最先,先于一切取证)**:走 `using-git-worktrees` 确保隔离工作树,**所有产物(board/log/verdicts/probes/proofs,均在课题文件夹 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/` 下)落在 worktree 内**,根除跨 session/任务的工作树串台。
    - **优先用原生 `EnterWorktree` 工具**——它落在**项目内** `.claude/worktrees/<name>` 并把会话切进去;`<name>` 取自 topic(如 `hypo-driven-ps-<topic>`),便于续跑定位。**禁止**裸 `git worktree add`(尤其禁止建到项目**外部**同级目录)——这是 `using-git-worktrees` 点名的 **#1 大忌**;仅当确无原生工具时才用 git 兜底,且只落**项目内** `.worktrees/`(须 gitignore)。
    - **baseRef 用当前 HEAD**(从你要诊断的本地代码切;不要默认从 `origin/<default>` 的 `fresh`,否则工作树里没有待诊断的改动)。
    - **续跑**:该 topic 的 worktree **已存在 → 用 `EnterWorktree(path=…)` 重进**(不新建);否则新建。进去后再按第 2 步判 续跑/全新。
+   - **同名不同日期冲突**:worktree 名只含 topic、不含日期,同名课题(不同创建日)会争用同一 `hypo-driven-ps-<topic>`——若重进的 worktree 里其实是**另一个日期**的同名课题(本想全新却落进旧文件夹,或第 2 步 glob 命中的日期与预期不符)→ **停下报警交用户**(同第 2 步多命中),**不**把日期塞进 worktree 名(那会破坏按课题名续跑)。
    - **无 git → 默认拒绝启动** + 引导用户(`git init` / 换到 git 项目);**仅当用户显式坚持**才降级"裸跑",并明确告知失去 隔离 / 提交 / 回退 / 续跑 四项保障。
 2. **续跑 or 全新**:
-   - worktree 里**已有** `<topic>-board.md` → **续跑**:主 agent 读**最新 board**(整盘假设+状态+排序)+ **log**(跨轮 why)重建框架;`工作语言` 读 board 头;**round 续号 = board 头「最新轮号」+1(不 reset)**;**可选派基线 Diagnostician 重核"代码现实"**(代码是否漂移、上轮修复是否还在)。
+   - **课题文件夹定位(按课题名 glob,与日期无关)**:在 worktree 的 `docs/hypo-driven-ps/` 下 glob `*-<topic>/<topic>-board.md` —— **唯一命中** → **续跑**该文件夹(日期前缀沿用、**不变**);**多命中**(同名课题多次创建)→ 停下报警、列出候选文件夹交用户选,**不擅自挑**;**无命中** → 全新,用**当天日期**建 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/`。续跑时主 agent 读**最新 board**(整盘假设+状态+排序)+ **log**(跨轮 why)重建框架;`工作语言` 读 board 头;**round 续号 = board 头「最新轮号」+1(不 reset)**;**可选派基线 Diagnostician 重核"代码现实"**(代码是否漂移、上轮修复是否还在)。
    - **无既有文档 → 全新**:框定问题(症状 + 成功判据)→ 定 `工作语言`(= 主 agent 当前语言)写进 board 头 → **基线 triage**(证据稀薄时派 Diagnostician 读报错/堆栈、确认稳定复现、查最近改动)→ 生成初始假设集(R01 起,每个带 描述/判据/可能性/验证难度)。
-3. 用模板建立/更新 board、log、`<topic>-verdicts/` 目录 → 选本轮 Hypo,写「当前轮计划」→ **过【用户检查点】(见下节)**。
+3. 用模板在课题文件夹 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/` 下建立/更新 board、log、`<topic>-verdicts/`、`<topic>-probes/`、`<topic>-proofs/` → 选本轮 Hypo,写「当前轮计划」→ **过【用户检查点】(见下节)**。
 
 **每一轮:**
 
 1. **主 agent 编排**:按优先级规则在「待验证」中选本轮 Hypo,在 board 写「当前轮计划」(验哪条判据、建议手段)→ **过【用户检查点】**。
-2. **spawn Diagnostician(opus,每轮全新)— 诊断**:Agent 工具,`subagent_type: general-purpose`、`model: opus`、**串行(不 run_in_background)**;prompt = `references/diagnostician-brief.md` 全文 + 当前轮计划 + 两份文件路径 + **`工作语言: <board 头取值>`**。它写测试、验证,**把完整 diagnostic verdict 写进 `<topic>-verdicts/R<NN>-H<NN>.md`(按 `references/verdict-template.md`),只回 1–2 行 digest 给主 agent**。不写 log。
-3. **spawn Reviewer(opus,每轮全新)— 节点1 核诊断**:同样三参 + **`工作语言`**;prompt = `references/reviewer-brief.md` 全文 + 该 verdict 文件路径 + 当前轮计划。它**读懂**该组 test(查对错与完整性)、重跑,调 `verification-before-completion` → **把 diagnostic-review verdict 写进同一文件**,回 digest:**批准** 或 **整改意见**。
+2. **spawn Diagnostician(opus,每轮全新)— 诊断**:Agent 工具,`subagent_type: general-purpose`、`model: opus`、**非阻塞 spawn(`run_in_background: true`)——仍单 subagent(不并发多假设),但主 agent 这一回合就此解阻塞、运行期可与用户对话(见「运行期异步交互」)**;prompt = `references/diagnostician-brief.md` 全文 + 当前轮计划 + 两份文件路径 + **`工作语言: <board 头取值>`**。它写测试、验证,**把完整 diagnostic verdict 写进 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-verdicts/R<NN>-H<NN>.md`(按 `references/verdict-template.md`),只回 1–2 行 digest 给主 agent**。不写 log。
+3. **spawn Reviewer(opus,每轮全新)— 节点1 核诊断**:同样三参 + **`工作语言`**(同样 `run_in_background: true`);prompt = `references/reviewer-brief.md` 全文 + 该 verdict 文件路径 + 当前轮计划。它**读懂**该组 test(查对错与完整性)、重跑,调 `verification-before-completion` → **把 diagnostic-review verdict 写进同一文件**,回 digest:**批准** 或 **整改意见**。
    - 整改(含 test 写错/组合不完整)→ 用 `SendMessage` 续**同一个** Diagnostician 补齐/重做(同一 y,标 attempt;不起新实例),再用 `SendMessage` 续**同一个** Reviewer 复核,直到通过。
 4. **确诊后(节点1 批准为「真」):修复成本闸门 + 修复**(结论为 假 / 无法判断 → 跳过本步;详见「修复成本闸门」章节):
    - **成本过大**(命中任一信号)→ Diagnostician **不修**,带成本评估上报主 agent → 主 agent 告知用户 → **用户决策**:立即修 / 暂缓(记「已确诊·未启动修复」)。
@@ -105,6 +111,20 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 
 **自主授权例外**:当用户已明确表示可自主推进(例如使用 `/loop`、`/goal`,或直接要求主 agent 自行决策),则主 agent **只汇报上述内容、不等 go-ahead**,汇报完直接进入 spawn。
 
+## 运行期异步交互(子 agent 工作时)
+
+子 agent 用 `run_in_background: true` 起,**主 agent 这一回合不被阻塞**——子 agent 跑测试/取证期间,用户随时可与主 agent 对话。规则:
+
+1. **主 agent 运行期仍不下场**:不读源码、不跑测试、不亲自取证(Iron Law #1 不变)。它只回答用户关于假设板的问题、接收用户指令。
+2. **buffer-and-relay(送达子 agent 的唯一通道)**:
+   - **纯状态提问**(如"现在第几轮""H3 验得怎样")→ 主 agent **直接答**,不入队。
+   - **与当前子 agent 任务相关的可执行指令** → 主 agent **即时记下(buffer)**,**待该子 agent 返回 digest 时,先用 `SendMessage` 续同一实例转达,再走下一协议步**。
+   - **改排序 / 增删假设 / 改判据类** → 并入下一轮「回灌重排(第 6 步)」。
+   - **不中途打断**:本轮原子完成,无中途 `TaskStop`。已知代价:若用户指令是"方向错了/该换题",当前轮仍跑到完成,redirect 在其返回后才生效。
+3. **完成通知 + 区分激活来源**:子 agent 完成即重新激活主 agent。**判别**:子 agent 完成的激活带回它的 verdict digest(指向 `R<NN>-H<NN>.md`);自然语言闲聊/指令则是用户插话——拿不准先按用户输入处理,不擅自推进协议步。据此分清本次激活是「子 agent 完成」(→ 走推进协议:核诊断/转修复/写板)还是「用户插话」(→ 走上面的答复/buffer),**不可把用户输入误当子 agent 结论,或反之**。
+
+> pre-spawn 的【用户检查点】门禁**不受影响**——它发生在 spawn *之前*;background 改变的只是 spawn *之后*、子 agent 运行*期间*主 agent 的可用性。
+
 ## 修复成本闸门(确诊后)
 
 某 Hypo 经 Reviewer 批准为「真」后,修复前先评估成本。**命中以下任一信号 = 成本过大**:
@@ -129,7 +149,7 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 
 ## 测试与 verdict(两个评审节点)
 
-每轮有**两个评审节点**,Diagnostician/Reviewer 各写一节 verdict(字段见 `references/verdict-template.md`),写进当轮 `<topic>-verdicts/R<NN>-H<NN>.md`,Reviewer 照节核:
+每轮有**两个评审节点**,Diagnostician/Reviewer 各写一节 verdict(字段见 `references/verdict-template.md`),写进当轮 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-verdicts/R<NN>-H<NN>.md`,Reviewer 照节核:
 
 - **节点1 — 诊断**:Diagnostician 写 `diagnostic` verdict(结论真/假/无法判断 + 证据 + 测试清单);Reviewer 写 `diagnostic-review`。
 - **节点2 — 修复**:确诊并决定修复后,Diagnostician 写 `repair` verdict(修复方案 + 复现/回归测试 + 第几次尝试 + 证据);Reviewer 写 `repair-review`。
@@ -141,7 +161,8 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 **测试持久化(二分)**:
 
 - **修复/回归测试** → 进项目**正式测试套件**(永久护航)。
-- **诊断验证测试(探针)** → 存到 `docs/hypo-driven-ps/<topic>-probes/`,在 log 证据里记路径。下一轮全新 Diagnostician 通过 log 找到、复用/扩展,**不从零写**;Reviewer 可重跑。
+- **诊断验证测试(探针)** → 存到 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/`,在 log 证据里记路径。下一轮全新 Diagnostician 通过 log 找到、复用/扩展,**不从零写**;Reviewer 可重跑。
+- **视觉/二进制证据(截图、图片、抓取产物)** → 存到 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-proofs/R<NN>-H<NN>/<用途>/`(**不得**直接放 proofs 根),在 verdict 证据里记路径。
 
 ## 提交与回退(运行时,有 git 才做)
 
@@ -149,13 +170,13 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 
 **每轮两次提交(Reviewer 通过后):**
 
-- **节点1 通过 → 提交诊断产物**(由 Diagnostician):探针 test(`docs/hypo-driven-ps/<topic>-probes/`)等。讯息如 `hypo-driven-ps(diag): 第N轮 H? <真/假/无法判断>`。
+- **节点1 通过 → 提交诊断产物**(由 Diagnostician):探针 test(`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/`)等。讯息如 `hypo-driven-ps(diag): 第N轮 H? <真/假/无法判断>`。
 - **节点2 通过 → 提交修复**(由 Diagnostician):修复代码 + 复现/回归 test。讯息如 `hypo-driven-ps(fix): 第N轮 H? <摘要>`。
 - **板/日志更新 → 由主 agent 在回灌重排(第6步)提交**:讯息如 `hypo-driven-ps(board): 第N轮`。
 
 **修复 3 次失败 → 回退 + 存档:**
 
-1. 把失败尝试的 diff 存档为 patch:`docs/hypo-driven-ps/<topic>-probes/failed-fixes/第N轮-H?.patch`(`git diff <节点1提交> -- <修复改动路径>`)。
+1. 把失败尝试的 diff 存档为 patch:`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/failed-fixes/第N轮-H?.patch`(`git diff <节点1提交> -- <修复改动路径>`)。
 2. 工作树**回退到修复前**(= 节点1 提交):`git checkout <节点1提交> -- <本次修复改动的代码与 test 路径>`——只回退本次修复的改动,**不动**已存档 patch 与节点1 的诊断探针。
 3. 状态记「已确诊·修复失败」,log 写明三次各试了什么、为何失败;提交此回退 + 存档(`hypo-driven-ps(fix-failed): 第N轮 H? 回退并存档`)。
 4. 下一轮在干净状态上继续。
@@ -221,6 +242,10 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 - 有原生 `EnterWorktree` 却用裸 `git worktree add`,或把 worktree 建到项目**外部**目录(应落项目内 `.claude/worktrees/`)。
 - 续跑时把 round 号 reset 回 R01,或没读最新 board+log 就另起炉灶。
 - 把完整 verdict 堆进主 agent 上下文 / 塞进 log(应:subagent 写 verdict 文件 + 只回 digest;log 只留摘要+指针)。
+- 产物散落在 `docs/hypo-driven-ps/` 根,而非课题文件夹 `<yyyy-mm-dd>-<topic>/` 下;或 proofs 目录下直接放文件,没归到 `R<NN>-H<NN>/` 子文件夹。
+- 子 agent 运行期主 agent 自己下场读码/跑测试/取证(应只答疑 + buffer,不下场)。
+- 用户运行期给的可执行指令没 buffer、丢了;或没等子 agent 返回就硬中途打断(本设计不做中途 TaskStop)。
+- 把子 agent「完成激活」与「用户插话激活」搞混(误把用户输入当子 agent 结论,或反之)。
 
 ## 常见借口 vs 现实
 

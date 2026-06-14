@@ -1,6 +1,6 @@
 # verdict 文件模板:`R<NN>-H<NN>.md`
 
-> 位置:`docs/hypo-driven-ps/<topic>-verdicts/`,**一轮一文件**(round 号在前、H 号在后,各补零两位,如 `R01-H02.md`)。
+> 位置:`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-verdicts/`,**一轮一文件**(round 号在前、H 号在后,各补零两位,如 `R01-H02.md`)。
 > 由**产出 verdict 的 subagent 写全文**(Diagnostician 写 diagnostic/repair 节,Reviewer 写 *-review 节);同时**只回 1–2 行 digest 给主 agent**。
 > **子轮号 y**:仅"重新诊断"(同一轮内换角度/重诊)才 y+1;整改重做、修复重试(第2/3次)**留同一 y**,用 `attempt K` 标记。
 > 所有文字用 **board 头部「工作语言」**。
@@ -19,9 +19,9 @@
 
   | test 路径 | 测什么 | 运行命令 | 红/绿 |
   |---|---|---|---|
-  | docs/hypo-driven-ps/<topic>-probes/… | … | … | … |
+  | docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/… | … | … | … |
 - **完整性论证**:为何这组 test 足以判定该判据(覆盖哪些情形、为何没漏)。
-- **证据**:命令 / 完整输出 / 退出码 / 复现步骤。
+- **证据**:命令 / 完整输出 / 退出码 / 复现步骤;视觉证据(截图等)写其 `<topic>-proofs/R<NN>-H<NN>/<用途>/…` 路径。
 - **结论**:判据成立(真) / 证伪(假) / 无法判断(写明哪条判据测不了、为何)。
 - **digest(回主 agent,1–2 行)**:<结论 + 关键证据一句话>
 
@@ -41,8 +41,8 @@
   |---|---|---|---|
   | <进正式测试套件的路径> | 复现 | … | 修复前红 → 后绿 |
   | … | 回归 | … | 绿 |
-- **证据**:问题不再复现的命令+输出+退出码;全套测试绿、无回归。
-- **结果**:已修复并经验证解决 / 本次失败(原因) / 第 3 次失败 → 回退到修复前 + 存档 patch 路径(`<topic>-probes/failed-fixes/R<NN>-H<NN>.patch`)。
+- **证据**:问题不再复现的命令+输出+退出码;全套测试绿、无回归;视觉证据(截图等)写其 `<topic>-proofs/R<NN>-H<NN>/<用途>/…` 路径。
+- **结果**:已修复并经验证解决 / 本次失败(原因) / 第 3 次失败 → 回退到修复前 + 存档 patch 路径(`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/failed-fixes/R<NN>-H<NN>.patch`)。
 - **digest**:<结果 + 一句话>
 
 ## R<NN>-H<NN>.<y> repair-review

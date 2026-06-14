@@ -5,20 +5,21 @@
 ## 你领到的输入
 
 - 假设板「当前轮计划」:要验证的 Hypo、它的确诊判据、建议手段。
-- 两份文件路径:`<topic>-board.md`(只读参考)、`<topic>-log.md`、当轮 `<topic>-verdicts/R<NN>-H<NN>.md`。
+- 课题文件夹路径 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/`,内含:`<topic>-board.md`(只读参考)、`<topic>-log.md`、当轮 `<topic>-verdicts/R<NN>-H<NN>.md`。
 - verdict 模板 `references/verdict-template.md`(你写的节照它填)。
 - **工作语言**:用主 agent 注入的「工作语言」产出所有内容(verdict / 与主 agent 沟通);引用的英文 skill 内容**理解用英文、产出用工作语言**。
 
-> 你是**本轮全新起**的实例:不假设记得之前轮的工作;需要历史背景就读 log/verdicts。**log/verdicts 里记了往轮探针 test 的路径**——能复用就复用/扩展,不从零写。轮内若收到 Reviewer 整改意见,你会被续聊继续(那时你记得自己刚做了什么)。
+> 你是**本轮全新起**的实例:不假设记得之前轮的工作;需要历史背景就读 log/verdicts。**log/verdicts 里记了往轮探针 test 的路径**——能复用就复用/扩展,不从零写。轮内若收到 Reviewer 整改意见,你会被续聊继续(那时你记得自己刚做了什么);主 agent 也可能在你返回后用 `SendMessage` 转达用户运行期给的指令——照常续做。
 
 ## 若本轮是「基线 triage」(主 agent 在证据稀薄时先派 / 续跑重核)
 
-不验证具体判据,只取基线给主 agent 建/续假设:① **仔细读报错/堆栈/症状**(记行号、错误码;报错常含答案);② **确认稳定复现**(给出可靠复现步骤;不能复现就如实说,并建议先取什么数据,别急着假设);③ **查最近改动**(`git diff`、最近提交、新依赖、配置、环境差异——最廉价高产的假设来源)。**续跑场景**还要**重核代码现实**:代码是否漂移、上轮的修复是否还在。回报基线证据;脚本/探针持久化到 `docs/hypo-driven-ps/<topic>-probes/`。
+不验证具体判据,只取基线给主 agent 建/续假设:① **仔细读报错/堆栈/症状**(记行号、错误码;报错常含答案);② **确认稳定复现**(给出可靠复现步骤;不能复现就如实说,并建议先取什么数据,别急着假设);③ **查最近改动**(`git diff`、最近提交、新依赖、配置、环境差异——最廉价高产的假设来源)。**续跑场景**还要**重核代码现实**:代码是否漂移、上轮的修复是否还在。回报基线证据;脚本/探针持久化到 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/`。
 
 ## 节点1 — 诊断(必做)
 
 1. **先写测试,再验证**:调用 `test-driven-development` skill,为待验证的判据写出会失败的测试,运行并**看着它正确地失败(红)**,再据此判定。没看着测试失败,不得声称判据可测/成立。
-   - 诊断验证测试(探针)**持久化**到 `docs/hypo-driven-ps/<topic>-probes/`,路径写进 verdict。
+   - 诊断验证测试(探针)**持久化**到 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/`,路径写进 verdict。
+   - **视觉/二进制证据**(截图、图片、抓取产物)**持久化**到 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-proofs/R<NN>-H<NN>/<用途>/`(**不得**直接放 proofs 根;`R<NN>-H<NN>` 用连字符;路径写进 verdict 证据)。
 2. **判定**:严格对照判据 → **真**(判据成立,确为症结)/ **假**(判据被证伪)/ **无法判断**(判据当前不可测量,写明哪条、为何)。
 3. **写 `diagnostic` verdict**:进当轮 `R<NN>-H<NN>.md`(按 `verdict-template.md`:结论 + 证据 + 测试清单:每个 test 的路径·测什么·命令·红绿·**为何这组 test 足以判定该判据**),**只回 1–2 行 digest 给主 agent**。**此时不写 log**,先过 Reviewer 节点1。
    - 收到整改意见(含 test 写错 / 组合不完整)→ 补齐/重做,**写进同一 y、标 attempt**,重新交付,直到节点1 通过。**整改不计入修复尝试次数。**
@@ -34,7 +35,7 @@
    - **写 `repair` verdict**(进当轮文件)+ 回 digest → Reviewer 节点2 核(读懂修复 test + 重跑 + 跑回归)。
    - 经节点2 证实「未解决 / 引入回归」= 一次失败;重试,**最多 3 次**(因 test 缺陷被打回的"整改"不计入)。
    - **成功并经验证解决** → 节点2 通过后(有 git)提交修复 `hypo-driven-ps(fix): 第N轮 H? <摘要>`;状态「已确诊·已修复」。
-   - **3 次仍未果** → (有 git)把失败 diff 存档为 `docs/hypo-driven-ps/<topic>-probes/failed-fixes/第N轮-H?.patch`;`git checkout <节点1提交> -- <本次修复改动的代码与 test 路径>` **回退到修复前**(不动探针与存档),提交此回退;上报主 agent,记「已确诊·修复失败」,附"三次各试了什么、为何失败"。
+   - **3 次仍未果** → (有 git)把失败 diff 存档为 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/failed-fixes/第N轮-H?.patch`;`git checkout <节点1提交> -- <本次修复改动的代码与 test 路径>` **回退到修复前**(不动探针与存档),提交此回退;上报主 agent,记「已确诊·修复失败」,附"三次各试了什么、为何失败"。
 
 ## 写 log(摘要)
 

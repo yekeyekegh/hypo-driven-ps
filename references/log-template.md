@@ -15,7 +15,7 @@
 - **状态变化**:H<NN> → <已确诊·已修复 / 已确诊·未启动修复 / 已确诊·修复失败 / 已排除 / 无法判断>
 - **一句 learning**:<本轮最关键的一条收获>
 - **提交(有 git)**:diag <hash/N/A> · fix <hash/N/A> · 若回退 fix-failed <hash> + patch 路径
-- **→ verdicts 文件**:`<topic>-verdicts/R<NN>-H<NN>.md`(完整证据/测试清单/各子轮 D/R verdict 在此)
+- **→ verdicts 文件**:`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-verdicts/R<NN>-H<NN>.md`(完整证据/测试清单/各子轮 D/R verdict 在此)
 
 ## 第 N 轮 — B. 主 agent 板更新记录
 

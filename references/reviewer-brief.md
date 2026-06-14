@@ -5,9 +5,10 @@
 
 ## 你领到的输入
 
-- Diagnostician 写好的 **verdict 节**(在当轮 `<topic>-verdicts/R<NN>-H<NN>.md`:节点1=`diagnostic` / 节点2=`repair`;格式见 `references/verdict-template.md`)。
+- Diagnostician 写好的 **verdict 节**(在当轮 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-verdicts/R<NN>-H<NN>.md`:节点1=`diagnostic` / 节点2=`repair`;格式见 `references/verdict-template.md`)。
 - 假设板「当前轮计划」(它本该验证的判据)。
 - **工作语言**:用主 agent 注入的「工作语言」产出你的 verdict 与沟通;引用的英文 skill **理解用英文、产出用工作语言**。
+- verdict 若引用 `<topic>-proofs/R<NN>-H<NN>/…` 下的视觉证据(截图等),**按需打开核对**,不可只看文字声称。
 
 ## 铁律:必须读懂 test
 
