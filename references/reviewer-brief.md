@@ -5,17 +5,19 @@
 
 ## 你领到的输入
 
-- Diagnostician 提交的**交付单**(节点1=诊断交付单 / 节点2=修复交付单;格式见 `references/handoff-template.md`)。
+- Diagnostician 写好的 **verdict 节**(在当轮 `<topic>-verdicts/R<NN>-H<NN>.md`:节点1=`diagnostic` / 节点2=`repair`;格式见 `references/verdict-template.md`)。
 - 假设板「当前轮计划」(它本该验证的判据)。
+- **工作语言**:用主 agent 注入的「工作语言」产出你的 verdict 与沟通;引用的英文 skill **理解用英文、产出用工作语言**。
 
 ## 铁律:必须读懂 test
 
 不懂 test 测了什么,就无法判断该不该过。两个节点都要:
 
-1. **读懂**交付单里**支撑本节点结论的那组 test**(逐个看它实际断言了什么)。
+1. **读懂** verdict 节里**支撑本节点结论的那组 test**(逐个看它实际断言了什么)。
 2. **查对错与完整性**:test 逻辑有没有写错?组合是否完整(有没有漏掉关键情形,导致结论站不住)?
-3. **重跑**这组 test,核对结果与交付单一致(命令真跑过、输出与退出码对得上)。
+3. **重跑**这组 test,核对结果与 verdict 一致(命令真跑过、输出与退出码对得上)。
 4. 调用 `verification-before-completion` skill:**没有当场新鲜的验证证据,不予通过**。
+5. **把你的判定写成 `diagnostic-review` / `repair-review` verdict 节进同一文件,只回 1–2 行 digest 给主 agent**。
 
 ## 节点1 — 核诊断
 
