@@ -1,6 +1,9 @@
 # Planning docs — kept local, not published to the remote repo
 PLAN*.md
 
+# Skill-development plans/specs (superpowers workflow) — kept local, not published
+docs/superpowers/
+
 # Playwright MCP scratch output (screenshots/console logs)
 .playwright-mcp/
 
