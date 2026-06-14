@@ -1,6 +1,6 @@
 ---
 name: hypo-driven-ps
-version: "1.0"
+version: "1.1"
 description: Hypothesis-driven, structured diagnosis and problem solving. Use ONLY when the user explicitly invokes it (e.g. "/hypo-driven-ps", "用 hypo-driven-ps", "摆个假设板", "用假设驱动诊断") for a hard / stuck / ambiguous problem that has multiple possible root causes — general problem solving (code bugs, performance, architecture choices, research, data anomalies, agent-behavior or environment issues), not limited to debugging. The main agent only orchestrates a hypothesis board and delegates all verification and fixing to Diagnostician + Reviewer subagents.
 ---
 
