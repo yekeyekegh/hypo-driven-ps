@@ -142,8 +142,6 @@
 hypo-driven-ps/
 ├── SKILL.md      # 完整 skill 定义（主 agent 读这份执行）
 ├── DESIGN.md     # 设计决策与取舍
-├── PLAN.md       # 初版实施计划
-├── PLAN-v2.md    # v2 迭代计划
 └── references/   # 按需 Read 的附属文件与模板
     ├── board-template.md           # 假设板模板
     ├── log-template.md             # 迭代日志模板
