@@ -35,6 +35,7 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 9. **成本过大的修复不得擅自执行** —— 确诊后须先评估修复成本;命中「成本过大」任一信号(见「修复成本闸门」)时,Diagnostician 不修、带评估上报,**由用户决策**——**即便处于自主模式也要上报**(高影响、难回滚)。
 10. **每节点通过须提交,修复失败须回退**(目标有 git 时)—— 节点1/节点2 各 Reviewer 通过后各一次 commit;修复 3 次失败 → 工作树回退到修复前 + 失败 diff 存档。
 11. **智识诚实,不懂别装** —— 判据测不了→「无法判断」;证据不足→不下结论;不清楚就如实说"我不理解 X"、去研究或回报主 agent,绝不臆造信心。
+12. **必须在隔离 worktree 中运行**(有 git 时)—— 第0步先经 `using-git-worktrees`;无 git 默认拒启,仅用户显式坚持才降级裸跑。根除跨 session/任务的工作树串台。
 
 ## 产物:两份文件(入 docs/,提交进 Git)
 
@@ -52,28 +53,31 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 
 ## 单轮协议(The Loop)
 
-**第 0 步(首次,主 agent 做)**:框定问题(症状 + "怎样算解决"的成功判据)。
+**第 0 步(主 agent 做,首次或续跑):**
 
-> **基线 triage(证据稀薄时先做,尤其代码 bug)**:主 agent 不亲自读代码/跑命令,先派一个 Diagnostician 做基线取证再建板——① **仔细读报错/堆栈/症状**(报错常含答案,记下行号/错误码);② **建立稳定复现**(能否可靠触发?不能→先取数据,别急着假设);③ **查最近改动**(`git diff`/最近提交/新依赖/配置/环境差异——最廉价高产的假设来源)。Diagnostician 回报基线证据,主 agent 据此生成更靠谱的初始假设。非代码问题(agent 行为/研究)同理:先确认可复现、收集基线观测。
-
-→ 生成初始假设集(每个带 描述/判据/概率/成本)→ 用模板建立 board 与 log 两份文件 → 选第一轮 Hypo,写「当前轮计划」→ **过【用户检查点】(见下节)**。
+1. **worktree 门禁(最先,先于一切取证)**:用 `using-git-worktrees` 确保隔离工作树——该 topic 的 worktree **已存在 → 进入续跑;否则新建**。所有产物(board/log/verdicts/probes)落在 worktree 内,根除跨 session/任务的工作树串台。
+   - **无 git → 默认拒绝启动** + 引导用户(`git init` / 换到 git 项目);**仅当用户显式坚持**才降级"裸跑",并明确告知失去 隔离 / 提交 / 回退 / 续跑 四项保障。
+2. **续跑 or 全新**:
+   - worktree 里**已有** `<topic>-board.md` → **续跑**:主 agent 读**最新 board**(整盘假设+状态+排序)+ **log**(跨轮 why)重建框架;`工作语言` 读 board 头;**round 续号 = board 头「最新轮号」+1(不 reset)**;**可选派基线 Diagnostician 重核"代码现实"**(代码是否漂移、上轮修复是否还在)。
+   - **无既有文档 → 全新**:框定问题(症状 + 成功判据)→ 定 `工作语言`(= 主 agent 当前语言)写进 board 头 → **基线 triage**(证据稀薄时派 Diagnostician 读报错/堆栈、确认稳定复现、查最近改动)→ 生成初始假设集(R01 起,每个带 描述/判据/可能性/验证难度)。
+3. 用模板建立/更新 board、log、`<topic>-verdicts/` 目录 → 选本轮 Hypo,写「当前轮计划」→ **过【用户检查点】(见下节)**。
 
 **每一轮:**
 
 1. **主 agent 编排**:按优先级规则在「待验证」中选本轮 Hypo,在 board 写「当前轮计划」(验哪条判据、建议手段)→ **过【用户检查点】**。
-2. **spawn Diagnostician(opus,每轮全新)— 诊断**:用 Agent 工具,`subagent_type: general-purpose`、`model: opus`、**串行(不 run_in_background)**;prompt = `references/diagnostician-brief.md` 的全文 + 当前轮计划 + 两份文件的绝对路径。它写测试、验证,交付 **「诊断交付单」**(结论 + 证据 + 测试清单;见 `references/handoff-template.md`)。此时不写 log。
-3. **spawn Reviewer(opus,每轮全新)— 节点1 核诊断**:同样 `subagent_type: general-purpose`、`model: opus`、串行;prompt = `references/reviewer-brief.md` 的全文 + 诊断交付单 + 当前轮计划。它**读懂**交付单里支撑结论的那组 test(查对错与完整性)、重跑,调 `verification-before-completion` → **批准** 或 **整改意见**。
-   - 整改(含 test 写错/组合不完整)→ 用 `SendMessage` 续**同一个** Diagnostician 补齐/重做(不起新实例),再用 `SendMessage` 续**同一个** Reviewer 复核,直到通过。
+2. **spawn Diagnostician(opus,每轮全新)— 诊断**:Agent 工具,`subagent_type: general-purpose`、`model: opus`、**串行(不 run_in_background)**;prompt = `references/diagnostician-brief.md` 全文 + 当前轮计划 + 两份文件路径 + **`工作语言: <board 头取值>`**。它写测试、验证,**把完整 diagnostic verdict 写进 `<topic>-verdicts/R<NN>-H<NN>.md`(按 `references/verdict-template.md`),只回 1–2 行 digest 给主 agent**。不写 log。
+3. **spawn Reviewer(opus,每轮全新)— 节点1 核诊断**:同样三参 + **`工作语言`**;prompt = `references/reviewer-brief.md` 全文 + 该 verdict 文件路径 + 当前轮计划。它**读懂**该组 test(查对错与完整性)、重跑,调 `verification-before-completion` → **把 diagnostic-review verdict 写进同一文件**,回 digest:**批准** 或 **整改意见**。
+   - 整改(含 test 写错/组合不完整)→ 用 `SendMessage` 续**同一个** Diagnostician 补齐/重做(同一 y,标 attempt;不起新实例),再用 `SendMessage` 续**同一个** Reviewer 复核,直到通过。
 4. **确诊后(节点1 批准为「真」):修复成本闸门 + 修复**(结论为 假 / 无法判断 → 跳过本步;详见「修复成本闸门」章节):
    - **成本过大**(命中任一信号)→ Diagnostician **不修**,带成本评估上报主 agent → 主 agent 告知用户 → **用户决策**:立即修 / 暂缓(记「已确诊·未启动修复」)。
-   - **小修(都不命中)或 用户决策立即修** → **同一个** Diagnostician 修(`test-driven-development` 写失败复现测试 → 最小实现),交 **「修复交付单」** → **同一个** Reviewer **节点2 核修复**(`verification-before-completion`;读懂修复 test + 重跑 + 跑回归)。
+   - **小修(都不命中)或 用户决策立即修** → **同一个** Diagnostician 修(`test-driven-development` 写失败复现测试 → 最小实现),**把 repair verdict 写进当轮 verdict 文件** → **同一个** Reviewer **节点2 核修复**(`verification-before-completion`;读懂修复 test + 重跑 + 跑回归,**写 repair-review verdict**)。
      - **修复尝试上限 3 次**:经节点2 证实未解决/有回归算一次失败(因 test 缺陷被打回的"整改"不计入);3 次仍未果 → 记「已确诊·修复失败」,把"各次试了什么、为何失败"作为 learning 返回主 agent。
-5. **Diagnostician 写 log**:经 Reviewer 通过后,把本轮「Diagnostician 轮次记录」(验证结论 + 证据 + 测试清单;若确诊则含 修复成本评估 + 修复结果/尝试次数)**追加**到 log。
+5. **Diagnostician 写 log(摘要)**:经 Reviewer 通过后,把本轮「Diagnostician 轮次记录(摘要)」按 `log-template.md` 的 A 条目**追加**到 log——只放 结论/状态变化/一句 learning/提交/**→ verdicts 文件指针**;完整证据已在 verdict 文件。
 6. **主 agent 回灌重排(硬门禁)**:
    a. **通读全量 log**(不可跳过),提炼跨轮的更深 insight。
    b. 复核**整盘**假设:逐个看 描述/判据/概率/成本/状态 是否要改;增删假设;重新排序。
    c. **跨轮架构信号检查**:若出现「多个确诊项都修复失败」或「每修一处别处就冒新问题」的模式 → 这是**架构问题**而非单个假设失败,停下交用户(走升级协议 opt3),不要继续打补丁。
-   d. 把「主 agent 板更新记录」**追加**到 log,并重写 board 快照。
+   d. 把「主 agent 板更新记录」**追加**到 log,并重写 board 快照(**含更新 board 头「最新轮号」= 本轮 R<NN>**)。
    e. **回收本轮的 Diagnostician 与 Reviewer**(此后不再向它们发消息)。
 7. **终止判定**:
    - 本轮 Hypo 已确诊**且修复后经验证确实解决** → 状态「已确诊·已修复」,**完成**。
@@ -119,12 +123,14 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 
 **修复尝试上限 3 次**:无论小修还是用户决策立即修,Diagnostician 修复最多试 3 次。经 Reviewer 节点2 证实「未解决 / 引入回归」算一次失败(因 test 写错或组合不完整被打回的"整改"**不计入**)。3 次仍未果 → 状态「已确诊·修复失败」,把"各次试了什么、为何失败"作为 learning 返回主 agent(它很可能提示该症结不完整或属架构问题,供重排/升级用)。修复成功并经验证解决 → 「已确诊·已修复」。
 
-## 测试与交付单(两个评审节点)
+## 测试与 verdict(两个评审节点)
 
-每轮有**两个评审节点**,Diagnostician 各提交一张交付单(字段见 `references/handoff-template.md`),Reviewer 照单核:
+每轮有**两个评审节点**,Diagnostician/Reviewer 各写一节 verdict(字段见 `references/verdict-template.md`),写进当轮 `<topic>-verdicts/R<NN>-H<NN>.md`,Reviewer 照节核:
 
-- **节点1 — 诊断交付**:Diagnostician 提交「诊断交付单」(结论真/假/无法判断 + 证据 + 测试清单)。
-- **节点2 — 修复交付**:确诊并决定修复后,提交「修复交付单」(修复方案 + 复现/回归测试 + 第几次尝试 + 证据)。
+- **节点1 — 诊断**:Diagnostician 写 `diagnostic` verdict(结论真/假/无法判断 + 证据 + 测试清单);Reviewer 写 `diagnostic-review`。
+- **节点2 — 修复**:确诊并决定修复后,Diagnostician 写 `repair` verdict(修复方案 + 复现/回归测试 + 第几次尝试 + 证据);Reviewer 写 `repair-review`。
+
+> 每个 verdict 写全文进文件,**只回 1–2 行 digest 给主 agent**(省主 agent 上下文)。
 
 **Reviewer 必须读懂 test**:不懂 test 测了什么就无法判断该不该过。两节点都要**读懂支撑本节点结论的那组 test**、查对错与完整性、重跑;节点2 额外重跑回归/既有套件。**test 有逻辑漏洞或组合不完整 → 本轮打回**让 Diagnostician 补齐(属"整改",**不计入**修复尝试次数)。
 
@@ -159,6 +165,10 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 3. **(质疑框定)** 问题框定是否错了 / 架构是否根本不对?
 
 → 主 agent 综合三项 + 自身判断,**给出下一步推荐**。但**最终决策权交用户**,不擅自继续。
+
+## 收尾(问题解决 / 用户结束)
+
+走 `finishing-a-development-branch`,把 **merge / 留 PR / 仅清理** 的选择**交用户**;**不自动 merge**(外向、难回滚)。board/log/verdicts 作为诊断档案随之处置。
 
 ## 复用的 skill(由 subagent 在各自上下文里 invoke)
 
@@ -203,6 +213,9 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 - 证据稀薄却跳过基线 triage(没读报错/没确认能复现/没查最近改动)就硬凑假设。
 - 证据不足却下了结论,或装懂(本该「无法判断」或"我不理解 X"却含糊带过)。
 - 简报里用裸 `(高/中)` 让用户猜哪个是可能性、哪个是难度(必须全标注)。
+- 没经 worktree 门禁就在共享工作树(如 main)上跑(无 git 又没走显式降级确认)。
+- 续跑时把 round 号 reset 回 R01,或没读最新 board+log 就另起炉灶。
+- 把完整 verdict 堆进主 agent 上下文 / 塞进 log(应:subagent 写 verdict 文件 + 只回 digest;log 只留摘要+指针)。
 
 ## 常见借口 vs 现实
 
