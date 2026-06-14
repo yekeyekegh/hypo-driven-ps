@@ -67,7 +67,7 @@
    development       before-completion
 ```
 
-- **任一时刻只有一个 Diagnostician、一个 Reviewer，串行**，不并发多个假设。
+- **任一时刻只有一个 Diagnostician、一个 Reviewer**：「串行」指不并发多个假设，**不等于阻塞主 agent**——子 agent 用 `run_in_background: true` 起，工作期间主 agent 仍可与你对话（状态提问直接答；可执行指令 buffer 到子 agent 返回时经 `SendMessage` 转达，本轮不中途打断）。
 - **每轮回收**：下一轮起全新一对，靠两份文件（board + log）重建状态，不靠跨轮记忆 → 反锚定、上下文有界。
 - **轮内交接**用 `SendMessage` 续同一实例（让它记得刚做了什么）；跨轮才换新。
 
@@ -76,7 +76,7 @@
 ## 单轮协议（The Loop）
 
 1. **worktree 门禁** — 先经 `using-git-worktrees` 进隔离工作树（优先原生 `EnterWorktree`，落项目内 `.claude/worktrees/`），所有产物落在 worktree 内。无 git 默认拒启。
-2. **续跑 or 全新** — 有既有 board → 读最新 board + log 重建框架、轮号续号；否则框定问题、基线 triage、生成初始假设集。
+2. **续跑 or 全新** — 按课题名 glob `docs/hypo-driven-ps/*-<topic>/` 定位课题文件夹：有既有 board → 读最新 board + log 重建框架、轮号续号；否则用当天日期建 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/`、框定问题、基线 triage、生成初始假设集。
 3. **用户检查点** — 画好假设板 + 写好当前轮计划后，向用户简报并等 go-ahead（除非已获自主授权）。
 4. **诊断（节点1）** — Diagnostician 写测试验证判据 → verdict 文件 → Reviewer 读懂 test、重跑、批准或退回。
 5. **修复成本闸门 + 修复（节点2）** — 确诊后先评估修复成本；成本过大上报用户决策，小修则当轮修复 + Reviewer 核验。**修复封顶 3 次**。
@@ -102,11 +102,15 @@
 
 ---
 
-## 产物：两份可追溯档案（入 `docs/hypo-driven-ps/`，提交进 Git）
+## 产物：每课题一个文件夹（入 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/`，提交进 Git）
+
+每个课题的全部产物收进**单一文件夹** `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/`（`<yyyy-mm-dd>` = 课题创建日，定死不改；同目录下可并存多个课题，不再散落）：
 
 - **假设板** `<topic>-board.md` —— 当前状态快照，主 agent 每轮重写。
 - **迭代日志** `<topic>-log.md` —— append-only，只追加不改写。
-- **verdict 文件** `<topic>-verdicts/R<NN>-H<NN>.md` —— 细粒度证据；主 agent 只看 1–2 行 digest，省上下文。
+- **verdict 目录** `<topic>-verdicts/R<NN>-H<NN>.md` —— 细粒度文字结论；主 agent 只看 1–2 行 digest，省上下文。
+- **探针目录** `<topic>-probes/` —— 诊断探针测试代码 + `failed-fixes/*.patch`。
+- **证据目录** `<topic>-proofs/` —— 截图 / 图片 / 抓取等**非测试视觉证据**；其下不得直接放文件，必须落 `R<NN>-H<NN>/` 子文件夹（建议再按用途分，如 `R02-H03/登录失败截图/`）。
 
 > 这是可追溯的诊断档案，有意覆盖「临时文件不入库」的惯例。
 
