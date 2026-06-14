@@ -65,6 +65,7 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
    - **优先用原生 `EnterWorktree` 工具**——它落在**项目内** `.claude/worktrees/<name>` 并把会话切进去;`<name>` 取自 topic(如 `hypo-driven-ps-<topic>`),便于续跑定位。**禁止**裸 `git worktree add`(尤其禁止建到项目**外部**同级目录)——这是 `using-git-worktrees` 点名的 **#1 大忌**;仅当确无原生工具时才用 git 兜底,且只落**项目内** `.worktrees/`(须 gitignore)。
    - **baseRef 用当前 HEAD**(从你要诊断的本地代码切;不要默认从 `origin/<default>` 的 `fresh`,否则工作树里没有待诊断的改动)。
    - **续跑**:该 topic 的 worktree **已存在 → 用 `EnterWorktree(path=…)` 重进**(不新建);否则新建。进去后再按第 2 步判 续跑/全新。
+   - **同名不同日期冲突**:worktree 名只含 topic、不含日期,同名课题(不同创建日)会争用同一 `hypo-driven-ps-<topic>`——若重进的 worktree 里其实是**另一个日期**的同名课题(本想全新却落进旧文件夹,或第 2 步 glob 命中的日期与预期不符)→ **停下报警交用户**(同第 2 步多命中),**不**把日期塞进 worktree 名(那会破坏按课题名续跑)。
    - **无 git → 默认拒绝启动** + 引导用户(`git init` / 换到 git 项目);**仅当用户显式坚持**才降级"裸跑",并明确告知失去 隔离 / 提交 / 回退 / 续跑 四项保障。
 2. **续跑 or 全新**:
    - **课题文件夹定位(按课题名 glob,与日期无关)**:在 worktree 的 `docs/hypo-driven-ps/` 下 glob `*-<topic>/<topic>-board.md` —— **唯一命中** → **续跑**该文件夹(日期前缀沿用、**不变**);**多命中**(同名课题多次创建)→ 停下报警、列出候选文件夹交用户选,**不擅自挑**;**无命中** → 全新,用**当天日期**建 `docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/`。续跑时主 agent 读**最新 board**(整盘假设+状态+排序)+ **log**(跨轮 why)重建框架;`工作语言` 读 board 头;**round 续号 = board 头「最新轮号」+1(不 reset)**;**可选派基线 Diagnostician 重核"代码现实"**(代码是否漂移、上轮修复是否还在)。
@@ -120,7 +121,7 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
    - **与当前子 agent 任务相关的可执行指令** → 主 agent **即时记下(buffer)**,**待该子 agent 返回 digest 时,先用 `SendMessage` 续同一实例转达,再走下一协议步**。
    - **改排序 / 增删假设 / 改判据类** → 并入下一轮「回灌重排(第 6 步)」。
    - **不中途打断**:本轮原子完成,无中途 `TaskStop`。已知代价:若用户指令是"方向错了/该换题",当前轮仍跑到完成,redirect 在其返回后才生效。
-3. **完成通知 + 区分激活来源**:子 agent 完成即重新激活主 agent。主 agent 须分清本次激活是「子 agent 完成」(→ 走推进协议:核诊断/转修复/写板)还是「用户插话」(→ 走上面的答复/buffer),**不可把用户输入误当子 agent 结论,或反之**。
+3. **完成通知 + 区分激活来源**:子 agent 完成即重新激活主 agent。**判别**:子 agent 完成的激活带回它的 verdict digest(指向 `R<NN>-H<NN>.md`);自然语言闲聊/指令则是用户插话——拿不准先按用户输入处理,不擅自推进协议步。据此分清本次激活是「子 agent 完成」(→ 走推进协议:核诊断/转修复/写板)还是「用户插话」(→ 走上面的答复/buffer),**不可把用户输入误当子 agent 结论,或反之**。
 
 > pre-spawn 的【用户检查点】门禁**不受影响**——它发生在 spawn *之前*;background 改变的只是 spawn *之后*、子 agent 运行*期间*主 agent 的可用性。
 
