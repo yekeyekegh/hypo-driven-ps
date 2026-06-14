@@ -202,3 +202,74 @@ hypo-driven-ps/
 > 补充决议(首次实跑反馈):**简报两维全标注 + 术语统一**。用户简报里假设的两维必须写 `（可能性:高 · 验证难度:中）`,
 > 禁止裸 `(高/中)`(用户无法分辨哪个是难度/可能性)。board 列名由「先验概率/验证成本」改为「可能性/验证难度」(语义不变)。
 > 已写入 SKILL.md(用户检查点格式规则 + Red Flag)、board-template(列名+注)、log-template(术语)。
+
+---
+
+# v2 增量设计(2026-06-14,已过 brainstorm + 用户通过)
+
+> 范围:worktree 隔离门禁 / verdicts 持久化层 / 跨 session 续跑 / 工作语言锚定 / 收尾合并 / board 头部字段。
+> 触发动机:实跑中出现共享工作树串台(另一 session 的改动被 Reviewer 误判为 Diagnostician 所为、错误要求 rollback);
+> 以及"主 agent 读完整 verdict 留上下文"信息量过大、跨 session 无法续跑等。
+
+## v2.1 Worktree 隔离门禁(第0步最前,先于基线 triage)
+
+- 第0步**最先**用 `using-git-worktrees` 确保隔离工作树:该 topic 的 worktree **已存在 → 进入续跑;否则新建**。
+- 所有产物(board / log / verdicts / probes)落在 **worktree 内**——根除跨 session/跨任务的工作树串台。
+- **无 git 退路**:默认**拒绝启动** + 引导(`git init` / 换到 git 项目);**仅当用户显式坚持**才降级"裸跑",
+  并明确告知失去 隔离 / 提交 / 回退 / 续跑 四项保障。
+- 新增 **Iron Law**:有 git 时**必须在隔离 worktree 中运行**。
+
+## v2.2 verdicts 持久化层(细粒度证据,与 log 分层)
+
+- 目录 `docs/hypo-driven-ps/<topic>-verdicts/`,**一轮一文件** `R<NN>-H<NN>.md`(round 号在前、H 号在后,各补零两位;
+  极端超 99 再走三位,基本不会)。
+- 文件内**子轮分节**:`## R01-H02.1 diagnostic` / `## R01-H02.1 diagnostic-review` / `## R01-H02.1 repair` /
+  `## R01-H02.1 repair-review` / `## R01-H02.2 diagnostic` …(Reviewer 的核验 verdict 跟产出名 +`-review`)。
+- **子轮号 y 的递增规则**:**仅"重新诊断"(同一轮内换角度/重诊)才 y+1**。整改打回(test 缺陷重做)、修复重试(第2/3次)
+  **留在同一 y 内**,用 `attempt 2/3` 标记。→ 子轮 = 一次诊断主导的微循环,编号最稳。
+- **写入与消费(双轨,省主 agent 上下文)**:产出 verdict 的 subagent(Diagnostician 写 diagnostic/repair;
+  Reviewer 写 *-review)把**完整 verdict 写进当轮 verdicts 文件**,**只回 1–2 行 digest 给主 agent**。
+  主 agent 上下文只承载 digest;完整 verdict 在盘,**按需才读**。
+- **log 瘦身**:每轮条目缩成 `round · hypo · 最终结论 · 状态变化 · 一句 learning · → verdicts 文件路径`;
+  原先塞在 log 的证据摘要/测试清单**下沉到 verdicts**。log 仍是"每轮通读全量"的决策/叙事层,必须保持精简。
+- 新增模板 `references/verdict-template.md`(diagnostic / diagnostic-review / repair / repair-review 四类节的字段)。
+
+## v2.3 跨 session 续跑
+
+- 新 session **重进同一 topic worktree**(v2.1 已存在则进)。
+- **主 agent 读最新 board(当前快照 = 整盘假设 + 状态 + 排序)+ log(跨轮 why)重建假设框架**;
+  **不读全部 verdicts**(按需)。
+- **round 号续号 = 现有最大 R + 1**(从 board 头部「最新轮号」/ verdicts 目录 / log 末条推),**不 reset 到 R01**;
+  所有新文书接已有轮次往上。
+- **可选派基线 Diagnostician 重核"代码现实"**(两次 session 间代码可能漂移:别的改动、上轮修复是否还在),再据此续框架。
+- 无既有文档 → fresh start(R01)。
+- 分工:**主 agent 读 board+log 重建决策层**;**基线 Diagnostician 重核代码证据层**。
+
+## v2.4 工作语言锚定
+
+- **首次启动**:主 agent 用当时(= 主 agent 当前对话)语言,定 **`工作语言: X` 写进 board 头部**。
+- **全程沿用**(含续跑:读 board 头取语言)。spawn 时**注入每个 subagent prompt**:所有产出
+  (verdict / 交付单 / log / 与主 agent 沟通)用工作语言;引用的英文 skill(TDD 等)**"理解用英文、产出用工作语言"**。
+
+## v2.5 收尾合并
+
+- 问题解决 / 用户结束 → 走 `finishing-a-development-branch`,把 **merge / 留 PR / 仅清理** 的选择**交用户**。
+  **不自动 merge**(外向且难回滚)。
+
+## v2.6 board 头部新增字段
+
+- `工作语言: X`(v2.4)
+- `最新轮号: R<NN>`(让续跑续号确定、零猜测)
+
+## v2 影响的文件
+
+- **SKILL.md**:第0步(worktree 门禁 → 续跑读 board+log/续号 → 基线 triage)、verdicts 与 log 分层、spawn 步注入工作语言、
+  收尾走 finishing-a-development-branch、新增 Iron Law(worktree)、Red Flags(无隔离裸跑/未续号 reset/未瘦身 log 等)。
+- **board-template.md**:头部加 `工作语言` + `最新轮号`。
+- **log-template.md**:A 条目瘦身为 摘要 + verdicts 指针。
+- **新增 references/verdict-template.md**:四类 verdict 节模板。
+- **diagnostician-brief.md / reviewer-brief.md**:写完整 verdict + 回 digest、用工作语言、(diag)续跑重核代码。
+- **handoff-template.md → 合并进 verdict-template,retire**:交付单(D→R 的当场材料)与落盘 verdict 高度重叠——
+  D 给 R 的"诊断/修复交付单"本就是它写进 verdicts 文件的 diagnostic/repair 节,R 的批准/整改即 *-review 节。
+  故**统一为单一 `verdict-template.md`**(交付单字段成为 diagnostic/repair 节的字段),**删除 handoff-template.md**,
+  并改 SKILL/brief 里对「交付单」的引用为「verdict 节(按 verdict-template)」。避免两份重叠模板。
