@@ -1,2 +1,8 @@
 # Planning docs — kept local, not published to the remote repo
 PLAN*.md
+
+# Playwright MCP scratch output (screenshots/console logs)
+.playwright-mcp/
+
+# Local Claude Code settings
+.claude/settings.local.json

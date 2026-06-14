@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 640px; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background:
+      radial-gradient(1200px 500px at 78% -10%, rgba(163,113,247,.18), transparent 60%),
+      linear-gradient(160deg, #0d1117 0%, #161b22 100%);
+    color: #e6edf3;
+    padding: 84px 96px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    position: relative; overflow: hidden;
+  }
+  .formula {
+    position: absolute; right: 70px; top: 150px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    font-size: 120px; font-weight: 700; color: rgba(163,113,247,.10);
+    transform: rotate(-8deg); white-space: nowrap; pointer-events: none;
+  }
+  .kicker {
+    font-family: "Cascadia Code","Consolas",monospace;
+    font-size: 22px; letter-spacing: 3px; text-transform: uppercase;
+    color: #a371f7; font-weight: 600;
+  }
+  .kicker .dot { color: #6e7681; margin: 0 12px; }
+  h1 {
+    font-family: "Cascadia Code","Consolas",monospace;
+    font-size: 104px; font-weight: 700; line-height: 1; margin-top: 8px;
+    letter-spacing: -2px;
+  }
+  h1 .accent { color: #a371f7; }
+  .tagline { font-size: 40px; font-weight: 600; margin-top: 26px; color: #f0f6fc; }
+  .sub { font-size: 25px; color: #8b949e; margin-top: 12px; font-style: italic; }
+  .chips { display: flex; gap: 16px; margin-top: 4px; }
+  .chip {
+    font-size: 24px; padding: 12px 24px; border-radius: 999px;
+    background: rgba(110,118,129,.12); border: 1px solid rgba(110,118,129,.4);
+    color: #c9d1d9;
+  }
+  .chip b { color: #a371f7; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="formula">信息增益 ÷ 成本</div>
+  <div>
+    <div class="kicker">AGENT SKILL <span class="dot">/</span> superpowers-compatible</div>
+    <h1>hypo-<span class="accent">driven</span>-ps</h1>
+  </div>
+  <div>
+    <div class="tagline">假设驱动的结构化诊断与求解</div>
+    <div class="sub">Hypothesis-driven, structured diagnosis &amp; problem solving</div>
+  </div>
+  <div class="chips">
+    <div class="chip">可测量<b>判据</b></div>
+    <div class="chip">信息增益 <b>÷</b> 成本</div>
+    <div class="chip">三角色<b>编排</b></div>
+    <div class="chip"><b>反锚定</b> · 可追溯</div>
+  </div>
+</body>
+</html>
