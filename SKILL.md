@@ -16,8 +16,8 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 ## 架构:三角色,主 agent 不亲自下场
 
 - **主 agent(编排者)**:提假设框架、建计划、选每轮验哪个 Hypo、据反馈重排假设板。**不读源码、不跑测试、不亲自取证、不亲自修复**——把吃上下文的活下放给 subagent,自己的上下文只承载假设板的演进。
-- **Diagnostician(opus subagent)**:领当前轮,调 `test-driven-development` 写测试、验证判据、交付结论+证据;经 Reviewer 通过后写 log。职责见 `references/diagnostician-brief.md`。
-- **Reviewer(opus subagent)**:核验 Diagnostician 的证据,调 `verification-before-completion`,批准或退回整改。职责见 `references/reviewer-brief.md`。
+- **Diagnostician(opus subagent)**:领当前轮,调 `test-driven-development` 写测试、验证判据、交付结论+证据;**只写 verdict,不写 log、不碰 git**。职责见 `references/diagnostician-brief.md`。
+- **Reviewer(opus subagent)**:核验 Diagnostician 的证据,调 `verification-before-completion`,批准或退回整改;**本轮收尾者——写 log A + commit/回退**。职责见 `references/reviewer-brief.md`。
 
 任一时刻**只有一个 Diagnostician、一个 Reviewer**——「串行」指**不并发多个假设**(每轮靠上一轮 learning 重排整盘),**不等于阻塞主 agent**:spawn 用 `run_in_background: true`,子 agent 工作期间主 agent 仍可与用户对话(见「运行期异步交互」)。
 
@@ -174,13 +174,13 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 
 **每轮两次提交(Reviewer 通过后):**
 
-- **节点1 通过 → 提交诊断产物**(由 Diagnostician):探针 test(`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/`)等。讯息如 `hypo-driven-ps(diag): 第N轮 H? <真/假/无法判断>`。
-- **节点2 通过 → 提交修复**(由 Diagnostician):修复代码 + 复现/回归 test。讯息如 `hypo-driven-ps(fix): 第N轮 H? <摘要>`。
+- **节点1 通过 → 提交诊断产物**(由收尾的 Reviewer):探针 test(`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/`)等。讯息如 `hypo-driven-ps(diag): 第N轮 H? <真/假/无法判断>`。
+- **节点2 通过 → 提交修复**(由收尾的 Reviewer):修复代码 + 复现/回归 test。讯息如 `hypo-driven-ps(fix): 第N轮 H? <摘要>`。
 - **板/日志更新 → 由主 agent 在回灌重排(第6步)提交**:讯息如 `hypo-driven-ps(board): 第N轮`。
 
-**修复 3 次失败 → 回退 + 存档:**
+**修复 3 次失败 → 回退 + 存档(由收尾的 Reviewer 执行):**
 
-1. 把失败尝试的 diff 存档为 patch:`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/failed-fixes/第N轮-H?.patch`(`git diff <节点1提交> -- <修复改动路径>`)。
+1. 把失败尝试的 diff 存档为 patch:`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-probes/failed-fixes/R<NN>-H<NN>.patch`(`git diff <节点1提交> -- <修复改动路径>`)。
 2. 工作树**回退到修复前**(= 节点1 提交):`git checkout <节点1提交> -- <本次修复改动的代码与 test 路径>`——只回退本次修复的改动,**不动**已存档 patch 与节点1 的诊断探针。
 3. 状态记「已确诊·修复失败」,log 写明三次各试了什么、为何失败;提交此回退 + 存档(`hypo-driven-ps(fix-failed): 第N轮 H? 回退并存档`)。
 4. 下一轮在干净状态上继续。
