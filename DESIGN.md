@@ -163,11 +163,14 @@ hypo-driven-ps/
 > 补充决议(执行 Task 1 期间):**subagent 生命周期 = 每轮回收 + 轮内整改保持同一实例**。
 > 每轮起全新一对 D/R(靠 board+log 重建状态,反锚定、上下文有界);轮内 D→R→整改→D 用 SendMessage
 > 续同一实例;本轮 log 写完、board 更新后一起回收,下一轮全新一对。已写入 SKILL.md(架构/单轮协议/Red Flags)。
+> **⚠️ 已被 2026-06-19 决议取代(本环境无 SendMessage):改「重起交接」+ 角色重划,见本节末。**
 >
 > 补充决议(执行 Task 1 期间):**每轮 spawn 前的用户检查点(人在环)**。主 agent 画好/更新好 board 并写下
 > 当前轮计划后、spawn D 之前,默认须向用户简报(hypo 概况 / 前三排序缘由 / 后续轮的上轮发现及影响)并等
 > go-ahead;仅当用户已授予自主权(`/loop`、`/goal`、明示自行决策)时改为只汇报不等待。
 > 已写入 SKILL.md(Iron Law 8 / 单轮协议第0步+第1步 / 新增「用户检查点」章节 / Red Flags)。
+>
+> 补充决议(2026-06-19,取代上「轮内保持同一实例」):**本 harness 不提供 SendMessage**,idle 实例无法二次激活。改为——轮内每次 handoff 走**「重起交接」**(全新 spawn + 注入 verdict 路径/角色节点/诉求,子 agent 先读 verdict 恢复);**角色重划**:Diagnostician 纯生产者(只写 verdict),Reviewer 本轮收尾者(核验后写 log A + commit diag/fix/回退),主 agent 写 log B + commit board/log。详见 specs/2026-06-19-sendmessage-free-respawn-design.md。已写入 SKILL.md(架构「重起交接」/ §80·§83·§121 指针 / step5·6 / Iron Law10)+ briefs + log-template + README。
 >
 > 补充决议(执行 Task 2 期间):**状态细分 + 修复成本闸门**。状态「已确诊」拆为「已确诊·已修复」「已确诊·未修复」;
 > 全集 = 待验证 / 已确诊·已修复 / 已确诊·未修复 / 已排除 / 无法判断 / 无需验证。确诊后修复前评估成本,
