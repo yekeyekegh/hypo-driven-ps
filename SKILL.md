@@ -140,7 +140,7 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 - 需引入新依赖 / 新基础设施。
 - 估计工作量远超单轮可完成。
 
-**都不命中 = 小修**(局部·低风险·可逆·单轮内·不动架构接口):本轮内直接修(同一个 Diagnostician 写测试+实现,同一个 Reviewer 核验),修复后经验证解决 → 状态「已确诊·已修复」。
+**都不命中 = 小修**(局部·低风险·可逆·单轮内·不动架构接口):本轮内直接修(走「重起交接」起 Diagnostician 写测试+实现、再起 Reviewer 核验),修复后经验证解决 → 状态「已确诊·已修复」。
 
 **成本过大**:Diagnostician **不动手修**,把「确诊结论 + 修复方案 + 命中了哪条成本信号 + 工作量/风险估计」上报主 agent;主 agent 转达用户,**由用户决策**:
 
@@ -232,7 +232,7 @@ description: Hypothesis-driven, structured diagnosis and problem solving. Use ON
 - 没确诊就开始修;或"顺手"改了无关的东西。
 - 打空了还自己硬往下凑,没交用户决策。
 - 对 agent 行为/环境类问题套用 defense-in-depth 多层校验。
-- 跨轮还续用同一对 subagent(没每轮回收);或轮内整改时另起新实例(丢了轮内连续性)。
+- 复用或试图二次激活已 idle 的子 agent 实例(任何 handoff——整改/转修复/转达——都该走「重起交接」起全新实例);或 Diagnostician 自己写 log / 碰 git(应 Diagnostician 纯生产、Reviewer 收尾)。
 - board 画完/更新完没向用户简报就直接 spawn(且未获自主授权);或已获自主授权却还在傻等 go-ahead。
 - 确诊后没评估修复成本就开修;或成本过大却擅自动了大修(需重构/动架构/数据迁移/不可逆),没上报用户决策。
 - Reviewer 没读懂 test 就放行;或 test 有漏洞/组合不完整却放过。
