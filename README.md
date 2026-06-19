@@ -67,9 +67,9 @@
    development       before-completion
 ```
 
-- **任一时刻只有一个 Diagnostician、一个 Reviewer**：「串行」指不并发多个假设，**不等于阻塞主 agent**——子 agent 用 `run_in_background: true` 起，工作期间主 agent 仍可与你对话（状态提问直接答；可执行指令 buffer 到子 agent 返回时经 `SendMessage` 转达，本轮不中途打断）。
+- **任一时刻只有一个 Diagnostician、一个 Reviewer**：「串行」指不并发多个假设，**不等于阻塞主 agent**——子 agent 用 `run_in_background: true` 起，工作期间主 agent 仍可与你对话（状态提问直接答；可执行指令 buffer 到子 agent 返回后并入下一次重起，本轮不中途打断）。
 - **每轮回收**：下一轮起全新一对，靠两份文件（board + log）重建状态，不靠跨轮记忆 → 反锚定、上下文有界。
-- **轮内交接**用 `SendMessage` 续同一实例（让它记得刚做了什么）；跨轮才换新。
+- **轮内交接**：每次都重起全新实例、靠当轮 verdict 文件重建上下文；Reviewer 收尾写 log A + commit（机制权威定义见 SKILL.md「重起交接」）。
 
 ---
 

@@ -3,19 +3,18 @@
 <!--
   规则:本文件只能在末尾追加新条目,禁止修改/删除既有条目。
   每轮产生两类条目:
-    A. Diagnostician 轮次记录(由 Diagnostician 在 Reviewer 批准后写)
-    B. 主 agent 板更新记录(由主 agent 在回灌重排后写)
+    A. 轮次记录(由 **Reviewer** 确认每个节点后追加:节点1 一片段、节点2 一片段;只写 结论/learning/提交/verdict 指针)
+    B. 主 agent 板更新记录(由主 agent 在回灌重排后写:跨轮 insight / 状态变化 / 重排 / 处置)
 -->
 
 ---
-## 第 N 轮 — A. Diagnostician 轮次记录（摘要,细节在 verdicts）
+## 第 N 轮 — A. 轮次记录(Reviewer 按节点追加;细节在 verdicts）
 
 - **轮次/假设**:R<NN> · H<NN> — <描述>
-- **最终结论**:判据成立(真)/ 证伪(假)/ 无法判断
-- **状态变化**:H<NN> → <已确诊·已修复 / 已确诊·未启动修复 / 已确诊·修复失败 / 已排除 / 无法判断>
-- **一句 learning**:<本轮最关键的一条收获>
+- **节点1 结论**:判据成立(真)/ 证伪(假)/ 无法判断 — <一句 learning>
+- **节点2 结论(若有修复)**:修复解决 / 失败(原因) — <一句 learning>
 - **提交(有 git)**:diag <hash/N/A> · fix <hash/N/A> · 若回退 fix-failed <hash> + patch 路径
-- **→ verdicts 文件**:`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-verdicts/R<NN>-H<NN>.md`(完整证据/测试清单/各子轮 D/R verdict 在此)
+- **→ verdict 文件**:`docs/hypo-driven-ps/<yyyy-mm-dd>-<topic>/<topic>-verdicts/R<NN>-H<NN>.md`(完整证据/测试清单/各子轮 D/R verdict 在此)
 
 ## 第 N 轮 — B. 主 agent 板更新记录
 

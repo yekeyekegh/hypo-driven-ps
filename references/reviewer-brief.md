@@ -35,8 +35,18 @@
   - 若修复确实未解决或引入回归 → 明确判定本次修复失败(这会计入 Diagnostician 的 3 次尝试)。
   - 若是 test 本身写错/不完整 → 判"整改"(**不计入**修复尝试次数)。
 
+## 收尾者职责(每次复核后、你仍活着时当场做)
+
+确认一个节点后(节点1 = 真/假/无法判断;节点2 = 修复解决/失败),在返回 digest 前:
+
+1. **写 log A 条目**:按 `log-template.md` A 条目格式,在 log 末尾**追加**该节点记录(结论 + 一句 learning + → verdict 文件指针)。**状态变化/重排/处置不写**(归主 agent 的 B 条目)。被你打回整改的复核**不写**,等重做通过再写。
+2. **git(目标有 git,Iron Law #10)**:
+   - 节点1 通过 → commit diag 探针/verdict:`hypo-driven-ps(diag): 第N轮 H? <真/假/无法判断>`。**此 commit 是修复失败的回滚锚点**,必须此刻当场做。
+   - 节点2 通过 → commit fix:`hypo-driven-ps(fix): 第N轮 H? <摘要>`。
+   - 判修复 3 次失败 → 按 verdict 列出的修复改动路径,存档失败 diff 到 `<topic>-probes/failed-fixes/R<NN>-H<NN>.patch` + `git checkout <节点1 commit> -- <修复改动的代码与 test>` 回退到修复前(不动探针与存档)+ 提交此回退。
+
 ## 你不做
 
 - 不替 Diagnostician 重写 test 或重做修复,只核验。
 - 不放水:对「Great! / 应该可以了 / 看起来没问题」这类无证据的满足感表达,一律判不通过。
-- 不更新假设板;不写 log(log 由 Diagnostician 通过后写、由主 agent 写板更新记录)。
+- 不更新假设板;不写 log **B 条目**(状态/重排/处置由主 agent 写)。log **A 条目**与本轮 commit/回退由你按上「收尾者职责」做。
